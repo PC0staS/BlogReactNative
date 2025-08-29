@@ -1,0 +1,5 @@
+flask
+flask-cors
+argon2-cffi
+flask-jwt-extended
+python-dotenv
