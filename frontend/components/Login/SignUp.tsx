@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Dimensions, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, { FadeIn, FadeOut, interpolate, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { checkAuth, Login, SignUp } from './SingUpLogic';
 
@@ -286,8 +286,11 @@ export default function SignUpComponent({ isSigningUp, setIsSigningUp }: Props) 
 
 }
 
+// ensure we know the window height so the component can cover the whole screen when moved by the keyboard
+const windowHeight = Dimensions.get('window').height;
+
 const styles = StyleSheet.create({
-    container: { flex: 1, flexDirection: 'column', paddingTop: 20, backgroundColor: '#FBEAE7', borderRadius: 40 },
+    container: { flex: 1, flexDirection: 'column', paddingTop: 20, backgroundColor: '#FBEAE7', borderRadius: 40, minHeight: windowHeight, overflow: 'hidden' },
     tabsRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 40, paddingTop: 8, marginBottom: 12 },
     tab: { alignItems: 'center', paddingHorizontal: 8 },
     tabText: { fontWeight: '700', color: '#5b2f24', fontSize: 16 },

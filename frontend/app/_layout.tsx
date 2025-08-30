@@ -36,8 +36,9 @@ export default function RootLayout() {
         <Stack.Screen
           name="blog"
           options={{
-            headerTitle: "Blog",
-            headerStyle: { backgroundColor: '#5b2f24' },
+            headerTitle: "",
+            headerStyle: { backgroundColor: '#c9c6c5ff' },
+            headerShown: false
           }}
         />
       </Stack>

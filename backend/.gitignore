@@ -2,3 +2,5 @@ user.db
 posts.db
 __pycache__/
 .env
+posts/*
+db/*
