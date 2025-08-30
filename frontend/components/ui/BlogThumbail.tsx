@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { router } from 'expo-router';
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 type Post = { id: string | number; title: string; content: string; thumbnail_url?: string; date?: string; author?: string; created_at?: string; createdAtFormatted?: string };
 
@@ -40,7 +41,7 @@ export default function BlogThumbnail({ post }: { post: Post }) {
         return `hace ${value} ${label}${value !== 1 ? "s" : ""}`;
     }
     return (
-        
+    <Pressable onPress={() => router.push(`/${post.id}`)}>
             <View style={styles.thumbnailContainer}>
                 <View style={styles.thumbnailInfo}>
                     <Text style={styles.thumbnailTitle}>{post.title}</Text>
@@ -57,6 +58,7 @@ export default function BlogThumbnail({ post }: { post: Post }) {
                 </View>
 
             </View>
+        </Pressable>
     );
 }
 

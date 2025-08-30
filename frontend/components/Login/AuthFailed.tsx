@@ -33,7 +33,7 @@ export default function AuthFailed() {
 }
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF5F5' },
+    screen: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF5F5', height: '100%' },
     card: { width: '86%', backgroundColor: '#fff', padding: 28, borderRadius: 14, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, elevation: 6 },
     icon: { fontSize: 44, marginBottom: 12 },
     title: { fontSize: 20, fontWeight: '700', color: '#b91c1c', marginBottom: 8 },

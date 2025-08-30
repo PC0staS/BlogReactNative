@@ -3,7 +3,8 @@ import AuthFailed from "@/components/Login/AuthFailed";
 import { checkAuth } from "@/components/Login/SingUpLogic";
 import BlogThumbnail from "@/components/ui/BlogThumbail";
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { useEffect, useState } from "react";
+import { router } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Dimensions,
@@ -41,23 +42,46 @@ export default function Blog() {
 
     type Post = { id: string | number; title: string; content: string; thumbnail_url: string; date?: string; author?: string };
     const [posts, setPosts] = useState<Post[]>([]);
-    const [postsLoading, setPostsLoading] = useState(true);
-    useEffect(() => {
-        async function fetchBlogs() {
-            setPostsLoading(true);
-            try {
-                const result = await fetchBlogsfromAPI();
-                setPosts(result || []);
-            } catch (error) {
-                console.error("Error fetching blogs:", error);
-                setPosts([]);
-            }
-            finally {
-                setPostsLoading(false);
-            }
+    const [postsLoading, setPostsLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchBlogs = useCallback(async () => {
+        if (!isAuthenticated) {
+            setPostsLoading(false);
+            setRefreshing(false);
+            return;
         }
+        setPostsLoading(true);
+        try {
+            const result = await fetchBlogsfromAPI();
+            const getTime = (p: any) => {
+                if (p?.createdAt instanceof Date && !isNaN(p.createdAt as any)) return (p.createdAt as Date).getTime();
+                const raw = p?.created_at ?? p?.createdAt ?? p?.published_at ?? p?.publishedAt ?? p?.date;
+                if (raw) {
+                    const d = new Date(String(raw));
+                    if (!isNaN(d.getTime())) return d.getTime();
+                }
+                return 0;
+            };
+            const sorted = (result || []).slice().sort((a: any, b: any) => getTime(b) - getTime(a));
+            setPosts(sorted);
+        } catch (error) {
+            console.error("Error fetching blogs:", error);
+            setPosts([]);
+        } finally {
+            setPostsLoading(false);
+            setRefreshing(false);
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
         fetchBlogs();
-    }, []);
+    }, [fetchBlogs]);
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchBlogs();
+    }, [fetchBlogs]);
 
     // Search state and debounce
     const [searchQuery, setSearchQuery] = useState('');
@@ -75,11 +99,10 @@ export default function Blog() {
     const HEADER_HEIGHT = 160;
 
     if (loading) return <ActivityIndicator size="large" color="#3d3636ff" />;
+    if (!isAuthenticated) return <AuthFailed />;
 
     return (
         <>
-            {!isAuthenticated && <AuthFailed />}
-
             <View style={styles.screenPadding}>
                 <View style={[styles.topCardContainer, { marginTop: 0 }]}> 
                     {/* Sticky header overlay above the posts */}
@@ -87,7 +110,7 @@ export default function Blog() {
                         <View style={styles.headerRow}>
                             <Text style={styles.titleBig}>Artículos</Text>
                             <View style={styles.headerActions}>
-                                <Pressable onPress={() => {}}>
+                                <Pressable onPress={() => {router.push('/blogpost')}}>
                                     <FontAwesome6 name="add" size={18} color="black" />
                                 </Pressable>
                             </View>
@@ -107,12 +130,12 @@ export default function Blog() {
                         </View>
                     </View>
 
-                    {postsLoading ? (
-                        <View style={{ padding: 28, alignItems: 'center' }}>
+                    {postsLoading && !refreshing ? (
+                        <View style={{ padding: 28, paddingTop: HEADER_HEIGHT, alignItems: 'center' }}>
                             <ActivityIndicator size="large" color="#3d3636ff" />
                         </View>
                     ) : filteredPosts.length === 0 ? (
-                        <View style={{ padding: 28, alignItems: 'center' }}>
+                        <View style={{ padding: 28, paddingTop: HEADER_HEIGHT, alignItems: 'center' }}>
                             <Text style={{ color: '#666', fontSize: 15 }}>
                                 {debouncedQuery
                                     ? `No se encontraron artículos para "${debouncedQuery}"`
@@ -131,6 +154,10 @@ export default function Blog() {
                             keyExtractor={(item, index) => (item.id != null ? String(item.id) : String(index))}
                             scrollEventThrottle={16}
                             keyboardShouldPersistTaps="handled"
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            // iOS offset for the pull-to-refresh indicator so it appears below the sticky header
+                            progressViewOffset={HEADER_HEIGHT}
                         />
                     )}
                 </View>
