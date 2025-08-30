@@ -2,16 +2,17 @@ import { fetchBlogsfromAPI } from "@/components/Blog/BlogsLogic";
 import AuthFailed from "@/components/Login/AuthFailed";
 import { checkAuth } from "@/components/Login/SingUpLogic";
 import BlogThumbnail from "@/components/ui/BlogThumbail";
-import { useEffect, useRef, useState } from "react";
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Animated,
     Dimensions,
+    FlatList,
     Platform,
-    StatusBar as RNStatusBar,
-    SafeAreaView,
+    Pressable,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from "react-native";
 
@@ -40,8 +41,10 @@ export default function Blog() {
 
     type Post = { id: string | number; title: string; content: string; thumbnail_url: string; date?: string; author?: string };
     const [posts, setPosts] = useState<Post[]>([]);
+    const [postsLoading, setPostsLoading] = useState(true);
     useEffect(() => {
         async function fetchBlogs() {
+            setPostsLoading(true);
             try {
                 const result = await fetchBlogsfromAPI();
                 setPosts(result || []);
@@ -49,59 +52,90 @@ export default function Blog() {
                 console.error("Error fetching blogs:", error);
                 setPosts([]);
             }
+            finally {
+                setPostsLoading(false);
+            }
         }
         fetchBlogs();
     }, []);
 
-    const scrollY = useRef(new Animated.Value(0)).current;
-    const topPadding = Platform.OS === "android" ? RNStatusBar.currentHeight ?? 0 : 44;
+    // Search state and debounce
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedQuery(searchQuery.trim().toLowerCase()), 300);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
 
-    const HEADER_EXPANDED_HEIGHT = 160;
-    const HEADER_COLLAPSED_HEIGHT = 64 + topPadding;
-    const collapseDistance = Math.max(1, HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT);
+    const filteredPosts = debouncedQuery.length > 0
+        ? posts.filter(p => ((p.title || '') + ' ' + (p.content || '')).toLowerCase().includes(debouncedQuery))
+        : posts;
 
-    const headerOpacity = scrollY.interpolate({ inputRange: [0, collapseDistance], outputRange: [0, 1], extrapolate: "clamp" });
-    const titleOpacity = scrollY.interpolate({ inputRange: [0, collapseDistance * 0.6, collapseDistance], outputRange: [1, 0.4, 0], extrapolate: "clamp" });
+    // Make a fixed sticky header height (title + search) so it remains above the posts.
+    const HEADER_HEIGHT = 160;
 
     if (loading) return <ActivityIndicator size="large" color="#3d3636ff" />;
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffffff" }}>
+        <>
             {!isAuthenticated && <AuthFailed />}
 
-            <Animated.View style={[styles.appBar, { paddingTop: topPadding, opacity: headerOpacity }]}>
-                <Text style={styles.appBarTitle}>Articles</Text>
-            </Animated.View>
-
             <View style={styles.screenPadding}>
-                <View style={styles.topCardContainer}>
-                    <Animated.FlatList
-                        data={posts}
-                        contentContainerStyle={{ paddingBottom: 40 }}
-                        ListHeaderComponent={() => (
-                            <Animated.View style={[styles.headerInner, { height: HEADER_EXPANDED_HEIGHT }] }>
-                                <View style={styles.headerRow}>
-                                    <Animated.Text style={[styles.titleBig, { opacity: titleOpacity }]}>Articles</Animated.Text>
-                                    <View style={styles.headerActions} />
-                                </View>
+                <View style={[styles.topCardContainer, { marginTop: 0 }]}> 
+                    {/* Sticky header overlay above the posts */}
+                    <View style={[styles.headerInner, { height: HEADER_HEIGHT, zIndex: 40 }]} pointerEvents="box-none">
+                        <View style={styles.headerRow}>
+                            <Text style={styles.titleBig}>Artículos</Text>
+                            <View style={styles.headerActions}>
+                                <Pressable onPress={() => {}}>
+                                    <FontAwesome6 name="add" size={18} color="black" />
+                                </Pressable>
+                            </View>
+                        </View>
 
-                                <Animated.View style={[styles.searchBox, { opacity: titleOpacity }]}> 
-                                    <Text style={styles.searchText}>Search here</Text>
-                                </Animated.View>
-                            </Animated.View>
-                        )}
-                        renderItem={({ item }) => <BlogThumbnail post={item} />}
-                        keyExtractor={(item, index) => (item.id != null ? String(item.id) : String(index))}
-                        ListEmptyComponent={() => <ActivityIndicator size="large" color="#3d3636ff" />}
-                        onScroll={Animated.event(
-                            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                            { useNativeDriver: true }
-                        )}
-                        scrollEventThrottle={16}
-                    />
+                        <View style={styles.searchBox}> 
+                            <TextInput
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                placeholder="Search here"
+                                placeholderTextColor={styles.searchText.color}
+                                style={styles.searchInput}
+                                returnKeyType="search"
+                                underlineColorAndroid="transparent"
+                                autoCorrect={false}
+                            />
+                        </View>
+                    </View>
+
+                    {postsLoading ? (
+                        <View style={{ padding: 28, alignItems: 'center' }}>
+                            <ActivityIndicator size="large" color="#3d3636ff" />
+                        </View>
+                    ) : filteredPosts.length === 0 ? (
+                        <View style={{ padding: 28, alignItems: 'center' }}>
+                            <Text style={{ color: '#666', fontSize: 15 }}>
+                                {debouncedQuery
+                                    ? `No se encontraron artículos para "${debouncedQuery}"`
+                                    : 'No hay artículos disponibles.'}
+                            </Text>
+                        </View>
+                    ) : (
+                        <FlatList
+                            contentContainerStyle={{ paddingBottom: 40, paddingTop: HEADER_HEIGHT }}
+                            style={{ flex: 1 }}
+                            // iOS: avoid automatic safe-area/content inset adjustments that add unexpected top spacing
+                            contentInsetAdjustmentBehavior={Platform.OS === 'ios' ? 'never' : undefined}
+                            data={filteredPosts}
+                            renderItem={({ item }) => <BlogThumbnail post={item} />}
+                            ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: '#b9b9b9ff', marginHorizontal: 0 }} />}
+                            keyExtractor={(item, index) => (item.id != null ? String(item.id) : String(index))}
+                            scrollEventThrottle={16}
+                            keyboardShouldPersistTaps="handled"
+                        />
+                    )}
                 </View>
             </View>
-        </SafeAreaView>
+        </>
     );
 }
 
@@ -113,7 +147,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 0,
     },
     topCardContainer: {
-        marginTop: 12,
+        marginTop: 0,
         borderRadius: 20,
         overflow: "hidden",
         backgroundColor: "#ffffff",
@@ -126,10 +160,14 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     headerInner: {
-        paddingHorizontal: 18,
-        paddingTop: 18,
-        backgroundColor: "#ffffff",
-        justifyContent: "center",
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    paddingHorizontal: 18,
+    paddingTop: 90,
+    backgroundColor: "#ffffff",
+    justifyContent: "center",
     },
     headerRow: {
         flexDirection: "row",
@@ -143,6 +181,8 @@ const styles = StyleSheet.create({
         height: 36,
         borderRadius: 10,
         backgroundColor: "#f2f4f7",
+        justifyContent: "center",
+        alignItems: "center",
     },
     titleBig: {
         color: "#1f2d3d",
@@ -160,23 +200,12 @@ const styles = StyleSheet.create({
     searchText: {
         color: "#9aa0a6",
     },
+    searchInput: {
+        height: 44,
+        fontSize: 15,
+        color: '#222',
+        padding: 0,
+    },
 
-    appBar: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: 0,
-        height: 104,
-        backgroundColor: "#ffffffee",
-        justifyContent: "center",
-        alignItems: "center",
-        borderBottomWidth: 1,
-        borderBottomColor: "#e9eaec",
-        zIndex: 30,
-    },
-    appBarTitle: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: "#1f2d3d",
-    },
+    // appBar removed
 });

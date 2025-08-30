@@ -70,8 +70,7 @@ const styles = StyleSheet.create({
       justifyContent: 'space-between',
       
       padding: 24,
-      borderBottomColor: '#b9b9b9ff',
-      borderBottomWidth: 1,
+      
     },
     thumbnailInfo: {
         flex: 1,
