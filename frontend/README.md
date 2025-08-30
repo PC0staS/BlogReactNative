@@ -1,6 +1,8 @@
-# Welcome to your Expo app 👋
+# Frontend - BlogReactNative 📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Esta es la aplicación frontend construida con [Expo](https://expo.dev) y React Native.
+
+**📖 Para documentación completa del proyecto, ver el [README principal](../README.md)**
 
 ## Get started
 
