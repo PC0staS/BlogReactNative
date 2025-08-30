@@ -15,7 +15,15 @@ from db_logic_users import (
 	add_user,
 	verify_credentials,
 	get_user as db_get_user,
-	check_user_exists,
+	check_user_exists
+)
+
+from db_logic_posts import (
+	create_post as db_create_post,
+	get_post as db_get_post,
+	get_posts as db_get_posts,
+	update_post as db_update_post,
+	delete_post as db_delete_post
 )
 
 load_dotenv()  # load env vars from .env if present
@@ -167,6 +175,35 @@ def debug_decode_token():
 		return jsonify({"payload": payload}), 200
 	except Exception as e:
 		return jsonify({"error": "Failed to decode token payload", "detail": str(e)}), 400
+
+
+@app.get("/api/posts")
+def get_posts():
+	posts = db_get_posts()
+	return jsonify({"posts": posts}), 200
+
+@app.get("/api/posts/<int:post_id>")
+def get_post(post_id: int):
+	post = db_get_post(post_id)
+	if not post:
+		return jsonify({"error": "Post not found"}), 404
+	return jsonify({"post": post}), 200
+
+@app.post("/api/posts")
+def create_post():
+	data = request.get_json(silent=True) or {}
+	title = (data.get("title") or "").strip()
+	content = (data.get("content") or "").strip()
+	if not title or not content:
+		return jsonify({"error": "Missing title or content"}), 400
+	post_id = db_create_post(title, content)
+	return jsonify({"post_id": post_id}), 201
+
+@app.delete("/api/posts/<int:post_id>")
+def delete_post(post_id: int):
+	if db_delete_post(post_id):
+		return jsonify({"message": "Post deleted"}), 200
+	return jsonify({"error": "Failed to delete post"}), 500
 
 if __name__ == "__main__":
 	port = int(os.environ.get("PORT", "3000"))

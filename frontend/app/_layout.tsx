@@ -33,6 +33,13 @@ export default function RootLayout() {
             headerShown: false // Oculta el header solo en esta pantalla
           }}
         />
+        <Stack.Screen
+          name="blog"
+          options={{
+            headerTitle: "Blog",
+            headerStyle: { backgroundColor: '#5b2f24' },
+          }}
+        />
       </Stack>
       <StatusBar style="dark" />
     </View>
