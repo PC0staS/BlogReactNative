@@ -252,6 +252,60 @@ const response = await fetch(`${BACKEND_URL}/api/posts`, {
 - **CORS** configurado correctamente
 - **Variables de entorno** para datos sensibles
 
+## 🏆 Highlights Técnicos
+
+### Arquitectura y Patrones
+- **Clean Architecture** con separación clara de responsabilidades
+- **Repository Pattern** para la gestión de datos
+- **File-based Routing** con Expo Router
+- **Component-based Architecture** reutilizable
+- **Custom Hooks** para lógica de estado compartida
+
+### Performance y Optimización
+- **Lazy Loading** de componentes y rutas
+- **Image Optimization** con múltiples formatos
+- **Database Indexing** para consultas eficientes  
+- **Caching** de requests con AsyncStorage
+- **Bundle Splitting** para web builds
+
+### Calidad de Código
+- **TypeScript** strict mode habilitado
+- **ESLint** con reglas personalizadas
+- **Consistent Code Style** en todo el proyecto
+- **Error Boundaries** para manejo robusto de errores
+- **Input Validation** exhaustiva
+
+## 📸 Capturas de Pantalla y Demo
+
+### Vista Principal - Lista de Artículos
+La aplicación presenta una interfaz limpia y moderna para navegar artículos, con funcionalidad de búsqueda en tiempo real.
+
+### Creación de Artículos
+Interfaz intuitiva para crear nuevos posts con soporte completo para imágenes y editor de texto rico.
+
+### Autenticación
+Sistema de login/registro con validación en tiempo real y feedback visual.
+
+> 📱 **Demo en vivo**: La aplicación está optimizada para funcionar en iOS, Android y Web simultáneamente.
+
+## 📝 Notas de Desarrollo
+
+### Decisiones Arquitectónicas
+- **Expo Router** elegido por su file-based routing y compatibilidad multiplataforma
+- **SQLite** como base de datos para simplicidad y portabilidad
+- **JWT** para autenticación stateless y escalabilidad
+- **Base64** para imágenes por simplicidad (recomendable cambiar a S3/CDN en producción)
+
+### Mejoras Futuras
+- [ ] Implementar paginación infinita en la lista de posts
+- [ ] Añadir editor de texto rico (WYSIWYG)
+- [ ] Integrar con servicios de almacenamiento en la nube para imágenes
+- [ ] Implementar notificaciones push
+- [ ] Añadir sistema de comentarios
+- [ ] Tests unitarios y de integración completos
+- [ ] CI/CD pipeline con GitHub Actions
+- [ ] Metrics y analytics
+
 ## 🚢 Despliegue
 
 ### Backend (Docker)
@@ -293,6 +347,52 @@ cd backend/code
 python -m pytest         # Tests unitarios
 python -m flake8         # Linting Python
 ```
+
+## 🔧 Solución de Problemas
+
+### Problemas Comunes
+
+**1. Error de conexión con el backend**
+```bash
+# Verificar que el backend esté ejecutándose
+curl http://localhost:3001/api/posts
+
+# Actualizar BACKEND_URL en frontend/constants.ts con tu IP local
+export const BACKEND_URL = 'http://TU_IP_LOCAL:3001';
+```
+
+**2. Problemas con Expo/React Native**
+```bash
+# Limpiar cache
+npx expo start -c
+# o
+rm -rf node_modules && npm install
+```
+
+**3. Error de permisos de Docker**
+```bash
+# Linux/Mac: Añadir usuario al grupo docker
+sudo usermod -aG docker $USER
+# Reiniciar sesión después del comando
+```
+
+**4. Base de datos no se crea**
+```bash
+# Verificar permisos del directorio db/
+mkdir -p backend/db
+chmod 755 backend/db
+```
+
+### FAQ
+
+**P: ¿Puedo usar otra base de datos en lugar de SQLite?**
+R: Sí, puedes modificar la lógica en `db_logic_*.py` para usar PostgreSQL, MySQL u otra BD.
+
+**P: ¿Cómo cambio el puerto del backend?**
+R: Modifica el `docker-compose.yml` o usa la variable `FLASK_RUN_PORT` en `.env`.
+
+**P: ¿Es compatible con Expo Web?**
+R: Sí, ejecuta `npm run web` en el directorio frontend.
 
 ## 🤝 Contribuir
 
